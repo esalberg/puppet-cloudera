@@ -135,15 +135,15 @@ class cloudera::java5 (
 --slave /usr/bin/unpack200 unpack200 /usr/java/default/bin/unpack200 \
 --slave /usr/bin/ControlPanel ControlPanel /usr/java/default/bin/ControlPanel \
 --slave /usr/bin/jcontrol jcontrol /usr/java/default/bin/jcontrol \
---slave /usr/share/man/man1/java.1 java.1.gz /usr/java/default/man/man1/java.1 \
---slave /usr/share/man/man1/keytool.1 keytool.1.gz /usr/java/default/man/man1/keytool.1 \
---slave /usr/share/man/man1/orbd.1 orbd.1.gz /usr/java/default/man/man1/orbd.1 \
---slave /usr/share/man/man1/pack200.1 pack200.1.gz /usr/java/default/man/man1/pack200.1 \
---slave /usr/share/man/man1/rmid.1 rmid.1.gz /usr/java/default/man/man1/rmid.1 \
---slave /usr/share/man/man1/rmiregistry.1 rmiregistry.1.gz /usr/java/default/man/man1/rmiregistry.1 \
---slave /usr/share/man/man1/servertool.1 servertool.1.gz /usr/java/default/man/man1/servertool.1 \
---slave /usr/share/man/man1/tnameserv.1 tnameserv.1.gz /usr/java/default/man/man1/tnameserv.1 \
---slave /usr/share/man/man1/unpack200.1 unpack200.1.gz /usr/java/default/man/man1/unpack200.1',
+--slave /usr/share/man/man1/java.1 java.1 /usr/java/default/man/man1/java.1 \
+--slave /usr/share/man/man1/keytool.1 keytool.1 /usr/java/default/man/man1/keytool.1 \
+--slave /usr/share/man/man1/orbd.1 orbd.1 /usr/java/default/man/man1/orbd.1 \
+--slave /usr/share/man/man1/pack200.1 pack200.1 /usr/java/default/man/man1/pack200.1 \
+--slave /usr/share/man/man1/rmid.1 rmid.1 /usr/java/default/man/man1/rmid.1 \
+--slave /usr/share/man/man1/rmiregistry.1 rmiregistry.1 /usr/java/default/man/man1/rmiregistry.1 \
+--slave /usr/share/man/man1/servertool.1 servertool.1 /usr/java/default/man/man1/servertool.1 \
+--slave /usr/share/man/man1/tnameserv.1 tnameserv.1 /usr/java/default/man/man1/tnameserv.1 \
+--slave /usr/share/man/man1/unpack200.1 unpack200.1 /usr/java/default/man/man1/unpack200.1',
             unless  => 'update-alternatives --display java | grep -q /usr/java/default/bin/java',
             path    => '/bin:/usr/bin:/sbin:/usr/sbin',
             require => Package['jdk'],
