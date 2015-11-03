@@ -217,6 +217,11 @@
 #   The directory where parcels are downloaded and distributed.
 #   Default: /opt/cloudera/parcels
 #
+# [*manage_sysctl*]
+#   Boolean flag that determines whether this module will manage sysctl or not.
+#   Need to resolve conflicts with other modules that manage sysctl.
+#   Default: true
+#
 # === Actions:
 #
 # Installs YUM repository configuration files.
@@ -257,36 +262,36 @@
 #  License.
 #
 class cloudera (
-  $ensure           = $cloudera::params::ensure,
-  $autoupgrade      = $cloudera::params::safe_autoupgrade,
-  $service_ensure   = $cloudera::params::service_ensure,
-  $service_enable   = $cloudera::params::safe_service_enable,
-  $cdh_reposerver   = $cloudera::params::cdh_reposerver,
-  $cdh_repopath     = $cloudera::params::cdh_repopath,
-  $cdh_version      = $cloudera::params::cdh_version,
-  $cdh5_repopath    = $cloudera::params::cdh5_repopath,
-  $cm_reposerver    = $cloudera::params::cm_reposerver,
-  $cm_repopath      = $cloudera::params::cm_repopath,
-  $cm_version       = $cloudera::params::cm_version,
-  $cm5_repopath     = $cloudera::params::cm5_repopath,
-  $ci_reposerver    = $cloudera::params::ci_reposerver,
-  $ci_repopath      = $cloudera::params::ci_repopath,
-  $ci_version       = $cloudera::params::ci_version,
-  $cs_reposerver    = $cloudera::params::cs_reposerver,
-  $cs_repopath      = $cloudera::params::cs_repopath,
-  $cs_version       = $cloudera::params::cs_version,
-  $cg_reposerver    = $cloudera::params::cg_reposerver,
-  $cg_repopath      = $cloudera::params::cg_repopath,
-  $cg_version       = $cloudera::params::cg_version,
-  $cg5_repopath     = $cloudera::params::cg5_repopath,
-  $cm_server_host   = $cloudera::params::cm_server_host,
-  $cm_server_port   = $cloudera::params::cm_server_port,
-  $use_tls          = $cloudera::params::safe_cm_use_tls,
-  $verify_cert_file = $cloudera::params::verify_cert_file,
-  $use_parcels      = $cloudera::params::safe_use_parcels,
-  $install_lzo      = $cloudera::params::safe_install_lzo,
-  $install_java     = $cloudera::params::safe_install_java,
-  $install_jce      = $cloudera::params::safe_install_jce,
+  $ensure            = $cloudera::params::ensure,
+  $autoupgrade       = $cloudera::params::safe_autoupgrade,
+  $service_ensure    = $cloudera::params::service_ensure,
+  $service_enable    = $cloudera::params::safe_service_enable,
+  $cdh_reposerver    = $cloudera::params::cdh_reposerver,
+  $cdh_repopath      = $cloudera::params::cdh_repopath,
+  $cdh_version       = $cloudera::params::cdh_version,
+  $cdh5_repopath     = $cloudera::params::cdh5_repopath,
+  $cm_reposerver     = $cloudera::params::cm_reposerver,
+  $cm_repopath       = $cloudera::params::cm_repopath,
+  $cm_version        = $cloudera::params::cm_version,
+  $cm5_repopath      = $cloudera::params::cm5_repopath,
+  $ci_reposerver     = $cloudera::params::ci_reposerver,
+  $ci_repopath       = $cloudera::params::ci_repopath,
+  $ci_version        = $cloudera::params::ci_version,
+  $cs_reposerver     = $cloudera::params::cs_reposerver,
+  $cs_repopath       = $cloudera::params::cs_repopath,
+  $cs_version        = $cloudera::params::cs_version,
+  $cg_reposerver     = $cloudera::params::cg_reposerver,
+  $cg_repopath       = $cloudera::params::cg_repopath,
+  $cg_version        = $cloudera::params::cg_version,
+  $cg5_repopath      = $cloudera::params::cg5_repopath,
+  $cm_server_host    = $cloudera::params::cm_server_host,
+  $cm_server_port    = $cloudera::params::cm_server_port,
+  $use_tls           = $cloudera::params::safe_cm_use_tls,
+  $verify_cert_file  = $cloudera::params::verify_cert_file,
+  $use_parcels       = $cloudera::params::safe_use_parcels,
+  $install_lzo       = $cloudera::params::safe_install_lzo,
+  $install_java      = $cloudera::params::safe_install_java,
+  $install_jce       = $cloudera::params::safe_install_jce,
   $install_cmserver  = $cloudera::params::safe_install_cmserver,
   $database_name     = $cloudera::params::database_name,
   $username          = $cloudera::params::username,
@@ -301,10 +306,11 @@ class cloudera (
   $server_key_file   = $cloudera::params::server_key_file,
   $server_chain_file = $cloudera::params::server_chain_file,
   $server_keypw      = $cloudera::params::server_keypw,
-  $proxy            = $cloudera::params::proxy,
-  $proxy_username   = $cloudera::params::proxy_username,
-  $proxy_password   = $cloudera::params::proxy_password,
-  $parcel_dir       = $cloudera::params::parcel_dir
+  $proxy             = $cloudera::params::proxy,
+  $proxy_username    = $cloudera::params::proxy_username,
+  $proxy_password    = $cloudera::params::proxy_password,
+  $parcel_dir        = $cloudera::params::parcel_dir,
+  $manage_sysctl     = $cloudera::params::manage_sysctl
 ) inherits cloudera::params {
   # Validate our booleans
   validate_bool($autoupgrade)
@@ -315,17 +321,20 @@ class cloudera (
   validate_bool($install_java)
   validate_bool($install_jce)
   validate_bool($install_cmserver)
+  validate_bool($manage_sysctl)
 
   anchor { 'cloudera::begin': }
   anchor { 'cloudera::end': }
 
-  sysctl { 'vm.swappiness':
-    ensure  => $ensure,
-    value   => '0',
-    apply   => true,
-    comment => 'Cloudera recommended setting.',
-    require => Anchor['cloudera::begin'],
-    before  => Anchor['cloudera::end'],
+  if $manage_sysctl {
+    sysctl { 'vm.swappiness':
+      ensure  => $ensure,
+      value   => '0',
+      apply   => true,
+      comment => 'Cloudera recommended setting.',
+      require => Anchor['cloudera::begin'],
+      before  => Anchor['cloudera::end'],
+    }
   }
 
   exec { 'disable_transparent_hugepage_defrag':
