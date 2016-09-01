@@ -39,6 +39,11 @@
 #   The directory where parcels are downloaded and distributed.
 #   Default: /opt/cloudera/parcels
 #
+# [*manage_conf*]
+#   Boolean flag that determines whether this module will manage the conf files.
+#   Allows Cloudera to manage the config instead.
+#   Default: true
+#
 # === Actions:
 #
 # Installs the packages.
@@ -71,11 +76,13 @@ class cloudera::cm5 (
   $server_port      = $cloudera::params::cm_server_port,
   $use_tls          = $cloudera::params::safe_cm_use_tls,
   $verify_cert_file = $cloudera::params::verify_cert_file,
-  $parcel_dir       = $cloudera::params::parcel_dir
+  $parcel_dir       = $cloudera::params::parcel_dir,
+  $manage_conf      = $cloudera::params::manage_conf
 ) inherits cloudera::params {
   # Validate our booleans
   validate_bool($autoupgrade)
   validate_bool($use_tls)
+  validate_bool($manage_conf)
 
   case $ensure {
     /(present)/: {
@@ -115,13 +122,14 @@ class cloudera::cm5 (
       tag    => 'cloudera-manager',
     }
   }
-
-  file { 'scm-config.ini':
-    ensure  => $file_ensure,
-    path    => '/etc/cloudera-scm-agent/config.ini',
-    content => template("${module_name}/scm-config.ini.erb"),
-    require => Package['cloudera-manager-agent'],
-    notify  => Service['cloudera-scm-agent'],
+  if $manage_conf {
+    file { 'scm-config.ini':
+      ensure  => $file_ensure,
+      path    => '/etc/cloudera-scm-agent/config.ini',
+      content => template("${module_name}/scm-config.ini.erb"),
+      require => Package['cloudera-manager-agent'],
+      notify  => Service['cloudera-scm-agent'],
+    }
   }
 
   service { 'cloudera-scm-agent':

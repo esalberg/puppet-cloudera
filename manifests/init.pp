@@ -222,6 +222,11 @@
 #   Need to resolve conflicts with other modules that manage sysctl.
 #   Default: true
 #
+# [*manage_conf*]
+#   Boolean flag that determines whether this module will manage the conf files.
+#   Allows Cloudera to manage the config instead.
+#   Default: true
+#
 # === Actions:
 #
 # Installs YUM repository configuration files.
@@ -310,7 +315,8 @@ class cloudera (
   $proxy_username    = $cloudera::params::proxy_username,
   $proxy_password    = $cloudera::params::proxy_password,
   $parcel_dir        = $cloudera::params::parcel_dir,
-  $manage_sysctl     = $cloudera::params::manage_sysctl
+  $manage_sysctl     = $cloudera::params::manage_sysctl,
+  $manage_conf       = $cloudera::params::manage_conf
 ) inherits cloudera::params {
   # Validate our booleans
   validate_bool($autoupgrade)
@@ -322,6 +328,7 @@ class cloudera (
   validate_bool($install_jce)
   validate_bool($install_cmserver)
   validate_bool($manage_sysctl)
+  validate_bool($manage_conf)
 
   anchor { 'cloudera::begin': }
   anchor { 'cloudera::end': }
@@ -336,16 +343,17 @@ class cloudera (
       before  => Anchor['cloudera::end'],
     }
   }
-
+  $hugepage_path = '/sys/kernel/mm/transparent_hugepage/defrag'
   exec { 'disable_transparent_hugepage_defrag':
-    command  => 'if [ -f /sys/kernel/mm/transparent_hugepage/defrag ]; then echo never > /sys/kernel/mm/transparent_hugepage/defrag; fi',
-    unless   => 'if [ -f /sys/kernel/mm/transparent_hugepage/defrag ]; then grep -q "\[never\]" /sys/kernel/mm/transparent_hugepage/defrag; fi',
+    command  => "if [ -f ${hugepage_path} ]; then echo never > ${hugepage_path}; fi",
+    unless   => "if [ -f ${hugepage_path} ]; then grep -q \"\[never\]\" ${hugepage_path}; fi",
     path     => '/usr/bin:/usr/sbin:/bin:/sbin',
     provider => 'shell',
   }
+  $hugepage_rh_path = '/sys/kernel/mm/redhat_transparent_hugepage/defrag'
   exec { 'disable_redhat_transparent_hugepage_defrag':
-    command  => 'if [ -f /sys/kernel/mm/redhat_transparent_hugepage/defrag ]; then echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag; fi',
-    unless   => 'if [ -f /sys/kernel/mm/redhat_transparent_hugepage/defrag ]; then grep -q "\[never\]" /sys/kernel/mm/redhat_transparent_hugepage/defrag; fi',
+    command  => "if [ -f ${hugepage_rh_path} ]; then echo never > ${hugepage_rh_path}; fi",
+    unless   => "if [ -f ${hugepage_rh_path} ]; then grep -q \"\[never\]\" ${hugepage_rh_path}; fi",
     path     => '/usr/bin:/usr/sbin:/bin:/sbin',
     provider => 'shell',
   }
@@ -394,6 +402,7 @@ class cloudera (
       verify_cert_file => $verify_cert_file,
       require          => $cloudera_cm_require,
       parcel_dir       => $parcel_dir,
+      manage_conf      => $manage_conf,
       before           => Anchor['cloudera::end'],
     }
     class { 'cloudera::cm5::repo':
@@ -595,6 +604,7 @@ class cloudera (
       verify_cert_file => $verify_cert_file,
       require          => $cloudera_cm_require,
       parcel_dir       => $parcel_dir,
+      manage_conf      => $manage_conf,
       before           => Anchor['cloudera::end'],
     }
     class { 'cloudera::cm::repo':
